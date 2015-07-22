@@ -1,13 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 )
 
 const (
-	ws   = 3     //wordsize = 3 bytes
-	mmax = 16381 // highest allowable ip
+	ws    = 3             //wordsize = 3 bytes
+	mmax  = 16383         // highest allowable addr
+	ipmax = mmax - ws + 1 // highest allowable ip
 	//RESERVED ADDRS
 	zero     = 0
 	minusOne = 1
@@ -17,49 +20,21 @@ const (
 	termC    = 5
 	count    = 6
 	speed    = 7
-	result   = 8
+	begin    = 8
 )
 
 var (
-	mem [mmax + ws - 1]int16 // memory
-	ip  int16                // instruction pointer
+	mem [mmax]int16 // memory
+	ip  int16       // instruction pointer
 )
 
 func initMem() {
-	a := int16(9)  // Multiply value in this address...
-	b := int16(10) // By value here
-	ma := int16(12)
-	mb := int16(13)
-	mem = [mmax + ws - 1]int16{0, 0, 0, // Reserved addrs
-		0, 0, 0, // Reserved addrs
-		0, 0, 0, // Reserved addrs
-		9, 5, 0, // Things you want to multiply go in these :)
-		0, 0, 0,
-		a, ma, 0, //12
-		b, mb, 0,
-		ma, mb, 36, //18
-		ma, ma, 0,
-		b, ma, 0, //24
-		mb, mb, 0,
-		a, mb, 42, //30
-		mb, mb, 0,
-		b, mb, 0, //36
-		minusOne, ma, 0,
-		mb, result, 0, //42
-		minusOne, ma, 45,
-		0, 0, mmax}
-
-	mem[zero] = 0
-	mem[minusOne] = -1
-	mem[one] = 1
-	mem[termS] = 0
-	mem[termE] = 63
-	mem[termC] = 1
-	mem[count] = 0
-	mem[speed] = 500
-	mem[result] = 0
-
-	ip = 15
+	dec := json.NewDecoder(os.Stdin) // As if an OISC would magically understand JSON...
+	err := dec.Decode(&mem)
+	if err != nil {
+		panic(err)
+	}
+	ip = mem[begin]
 }
 
 func subleq(a, b, c int16) int16 {
@@ -70,7 +45,7 @@ func subleq(a, b, c int16) int16 {
 	} else {
 		ip += ws //otherwise just increment to next instruction
 	}
-	if ip >= mmax {
+	if ip >= ipmax {
 		return -1 // End program if we're going to overflow the instruction pointer
 	}
 	return ip
@@ -89,9 +64,6 @@ func terminal(start, end, cols int16) {
 		}
 		if i == mem[ip+1] {
 			fmt.Print("\033[1;34m")
-		}
-		if i == result {
-			fmt.Print("\033[1;35m")
 		}
 		if i == count {
 			fmt.Print("\033[1;33m")
