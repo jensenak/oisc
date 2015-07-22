@@ -12,9 +12,12 @@ const (
 	zero     = 0
 	minusOne = 1
 	one      = 2
-	count    = 3
-	speed    = 4
-	result   = 5
+	termS    = 3
+	termE    = 4
+	termC    = 5
+	count    = 6
+	speed    = 7
+	result   = 8
 )
 
 var (
@@ -23,36 +26,40 @@ var (
 )
 
 func initMem() {
-	a := int16(6) // Multiply value in this address...
-	b := int16(7) // By value here
-	ma := int16(9)
-	mb := int16(10)
+	a := int16(9)  // Multiply value in this address...
+	b := int16(10) // By value here
+	ma := int16(12)
+	mb := int16(13)
 	mem = [mmax + ws - 1]int16{0, 0, 0, // Reserved addrs
+		0, 0, 0, // Reserved addrs
 		0, 0, 0, // Reserved addrs
 		9, 5, 0, // Things you want to multiply go in these :)
 		0, 0, 0,
 		a, ma, 0, //12
 		b, mb, 0,
-		ma, mb, 33, //18
+		ma, mb, 36, //18
 		ma, ma, 0,
 		b, ma, 0, //24
 		mb, mb, 0,
-		a, mb, 39, //30
+		a, mb, 42, //30
 		mb, mb, 0,
 		b, mb, 0, //36
 		minusOne, ma, 0,
 		mb, result, 0, //42
-		minusOne, ma, 42,
+		minusOne, ma, 45,
 		0, 0, mmax}
 
 	mem[zero] = 0
 	mem[minusOne] = -1
 	mem[one] = 1
+	mem[termS] = 0
+	mem[termE] = 63
+	mem[termC] = 1
 	mem[count] = 0
 	mem[speed] = 500
 	mem[result] = 0
 
-	ip = 12
+	ip = 15
 }
 
 func subleq(a, b, c int16) int16 {
@@ -70,6 +77,7 @@ func subleq(a, b, c int16) int16 {
 }
 
 func terminal(start, end, cols int16) {
+	cols = cols * ws     // Each column contains a word
 	fmt.Print("\033[2J") // Clear screen
 	line := 2
 	col := int16(0)
@@ -105,7 +113,7 @@ func clock() {
 func main() {
 	initMem() // Fill memory (program, vars, etc)
 	for ip >= 0 {
-		terminal(0, 63, 3)
+		terminal(mem[termS], mem[termE], mem[termC])
 		ip = subleq(mem[ip], mem[ip+1], mem[ip+2])
 		clock()
 	}
